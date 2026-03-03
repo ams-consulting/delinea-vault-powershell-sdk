@@ -40,7 +40,7 @@ Specify the object by ID to get all details.
 .PARAMETER SearchText
 Specify the search text to use to filter results.
 
-.PARAMETER SecretCount
+.PARAMETER IncludeSecretCount
 Specify if should include secret count (default is true).
 
 .PARAMETER PageSize
@@ -62,20 +62,16 @@ None
 [Object]DlnCharacterSets
 
 .EXAMPLE
-PS C:\> Get-XPMCharacterSets
-Outputs all Users objects existing on the system
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "john.doe@domain.name"
-Return user with username john.doe@domain.name if exists
+
 
 .EXAMPLE
-PS C:\> Get-DlnCharacterSets -Name "%test%"
-Return all users with Name containing "test" if exists
+
 
 .EXAMPLE
-PS C:\> Get-DlnCharacterSets -ID 12345678-ABCD-EFGH-IJKL-1234567890AB
-Return user with ID "12345678-ABCD-EFGH-IJKL-1234567890AB" if exists
+
 #>
 function Get-DlnCharacterSets {
 	param (
