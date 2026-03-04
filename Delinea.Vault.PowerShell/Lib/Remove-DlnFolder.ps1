@@ -29,35 +29,30 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about User(s) on the system.
+This Cmdlet removes a Folder from the system.
 
 .DESCRIPTION
-This Cmdlet retrieves important information about User(s) on the system. Can return a single user by specifying the Username.
+This Cmdlet removes a Folder from the system.
 
-.PARAMETER Name
-Specify the User by its username.
-
+.PARAMETER Id
+Specify the Folder Id.
 .INPUTS
 None
 
 .OUTPUTS
-[Object]XpmUser
+[Object]DlnFolder
 
 .EXAMPLE
-PS C:\> Get-XPMUser 
-Outputs all Users objects existing on the system
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "john.doe@domain.name"
-Return user with username john.doe@domain.name if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "%test%"
-Return all users with Name containing "test" if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -ID 12345678-ABCD-EFGH-IJKL-1234567890AB
-Return user with ID "12345678-ABCD-EFGH-IJKL-1234567890AB" if exists
+
 #>
 function Remove-DlnFolder {
 	param (

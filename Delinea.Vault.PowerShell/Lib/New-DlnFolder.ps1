@@ -29,35 +29,43 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about User(s) on the system.
+This Cmdlet creates a new Folder on the system.
 
 .DESCRIPTION
-This Cmdlet retrieves important information about User(s) on the system. Can return a single user by specifying the Username.
+This Cmdlet creates a new Folder on the system.
 
 .PARAMETER Name
-Specify the User by its username.
+Specify the Folder name.
+
+.PARAMETER ParentFolderId
+Specify the Folder ID where to create Secret (Root folder by default).
+
+.PARAMETER Path
+Specify the Folder full Path, starting with Root folder and ending with Folder name. All folders in the Path must exist (example '\Service Accounts\MS-SQL').
+
+.PARAMETER FolderTypeId
+Specify the Folder type ID (1 by default).
+
+.PARAMETER InheritPermissions
+Specify if Inherit Permissions should be enabled (default is true).
 
 .INPUTS
 None
 
 .OUTPUTS
-[Object]XpmUser
+[Object]DlnFolder
 
 .EXAMPLE
-PS C:\> Get-XPMUser 
-Outputs all Users objects existing on the system
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "john.doe@domain.name"
-Return user with username john.doe@domain.name if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "%test%"
-Return all users with Name containing "test" if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -ID 12345678-ABCD-EFGH-IJKL-1234567890AB
-Return user with ID "12345678-ABCD-EFGH-IJKL-1234567890AB" if exists
+
 #>
 function New-DlnFolder {
 	param (

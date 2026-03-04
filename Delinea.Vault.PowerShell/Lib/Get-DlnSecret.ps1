@@ -59,7 +59,7 @@ Specify if results should include inactive groups.
 None
 
 .OUTPUTS
-[Object]XpmUser
+[Object]DlnSecret
 
 .EXAMPLE
 PS C:\> Get-XPMUser 

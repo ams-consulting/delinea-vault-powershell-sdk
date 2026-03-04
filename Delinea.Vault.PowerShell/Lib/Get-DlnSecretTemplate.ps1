@@ -29,35 +29,49 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about User(s) on the system.
+This Cmdlet retrieves important information about SecretTemplate on the system.
 
 .DESCRIPTION
-This Cmdlet retrieves important information about User(s) on the system. Can return a single user by specifying the Username.
+This Cmdlet retrieves important information about SecretTemplate on the system.
 
-.PARAMETER Name
-Specify the User by its username.
+.PARAMETER Id
+Specify the object by ID to get all details.
+
+.PARAMETER SearchText
+Specify the search text to use to filter results.
+
+.PARAMETER IncludeSecretCount
+Specify if should include secret count (default is true).
+
+.PARAMETER PageSize
+Specify the number of objects by pages when using pagination (default is 100).
+
+.PARAMETER IncludeInactive
+Specify if results should include inactive users (default is false).
+
+.PARAMETER SortDirection
+Specify the sorting direction between 'Asc' and 'Desc' (default is 'Asc').
+
+.PARAMETER SortBy
+Specify the field to sort by (default is 'name').
 
 .INPUTS
 None
 
 .OUTPUTS
-[Object]XpmUser
+[Object]SecretTemplate
 
 .EXAMPLE
-PS C:\> Get-XPMUser 
-Outputs all Users objects existing on the system
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "john.doe@domain.name"
-Return user with username john.doe@domain.name if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "%test%"
-Return all users with Name containing "test" if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -ID 12345678-ABCD-EFGH-IJKL-1234567890AB
-Return user with ID "12345678-ABCD-EFGH-IJKL-1234567890AB" if exists
+
 #>
 function Get-DlnSecretTemplate {
 	param (

@@ -59,20 +59,16 @@ None
 [Object]DlnFolder
 
 .EXAMPLE
-PS C:\> Get-DlnFolder 
-Outputs all Users objects existing on the system
+
 
 .EXAMPLE
-PS C:\> Get-DlnFolder -SearchText "Delinea Vault Accounts"
-Return folders with name exactly or containing "Delinea Vault Accounts" if exists
+
 
 .EXAMPLE
-PS C:\> Get-DlnFolder -ParentFolderId (Get-DlnFolder -SearchText "Delinea Vault Accounts").Id
-Return all folders existing as a child folder of folder with Name containing "Delinea Vault Accounts" if exists
+
 
 .EXAMPLE
-PS C:\> Get-DlnFolder -OnlyIncludeRootFolders
-Return only folders that are root folders if exists
+
 #>
 function Get-DlnFolder {
 	param (
