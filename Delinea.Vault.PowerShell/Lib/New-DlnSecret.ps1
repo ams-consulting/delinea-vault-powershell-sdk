@@ -29,35 +29,52 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about User(s) on the system.
+This Cmdlet creates a new Secret on the system.
 
 .DESCRIPTION
-This Cmdlet retrieves important information about User(s) on the system. Can return a single user by specifying the Username.
+This Cmdlet creates a new Secret on the system. 
 
-.PARAMETER Name
-Specify the User by its username.
+.PARAMETER templateId
+Specify the Template ID to use to create Secret.
+
+.PARAMETER folderId
+Specify the Folder ID where to create Secret.
+
+.PARAMETER name
+Specify the Secret name.
+
+.PARAMETER fields
+Specify the fields for this secret as an array of slug-value pairs (e.g. import from CSV file with headers as 'slug' and 'value').
+
+.PARAMETER siteId
+Specify the Site to use when managing this Secret.
+
+.PARAMETER inheritSecretPolicy
+Specify if Inherit Secret Policy should be enabled (default is true).
+
+.PARAMETER generateSshKeys
+Specify if SSH Keys should be generated (default is false).
+
+.PARAMETER autoChangePassword
+Specify if password should be changed automatically (default is false).
 
 .INPUTS
 None
 
 .OUTPUTS
-[Object]XpmUser
+[Object]DlnSecret
 
 .EXAMPLE
-PS C:\> Get-XPMUser 
-Outputs all Users objects existing on the system
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "john.doe@domain.name"
-Return user with username john.doe@domain.name if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -Name "%test%"
-Return all users with Name containing "test" if exists
+
 
 .EXAMPLE
-PS C:\> Get-XPMUser -ID 12345678-ABCD-EFGH-IJKL-1234567890AB
-Return user with ID "12345678-ABCD-EFGH-IJKL-1234567890AB" if exists
+
 #>
 function New-DlnSecret {
 	param (
