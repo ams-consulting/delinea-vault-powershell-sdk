@@ -73,6 +73,10 @@ function Connect-DlnVault {
         [Parameter(ParameterSetName = "Interactive")]
         [Switch]$UseTwoFactor,
 
+        [Parameter(Mandatory = $false, HelpMessage = "Specify valid access token to create session (API token can be generated from Profile on Delinea Vault Web UI).")]
+        [Parameter(ParameterSetName = "Interactive")]
+        [System.String]$AccessToken,
+
         [Parameter(Mandatory = $false, HelpMessage = "Specify to use refresh token to renew expired access token.")]
         [Parameter(ParameterSetName = "Token")]
         [Switch]$RefreshToken
@@ -81,8 +85,41 @@ function Connect-DlnVault {
     try {	
         # Set Security Protocol for RestAPI (must use TLS 1.2)
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        if ($AccessToken) {
+            if([system.string]::IsNullOrEmpty($Url) -or [system.string]::IsNullOrEmpty($User)) {
+                # Both Url and User are mandatory to validate Access Token and generate new Session token in PowerShell session
+                Throw "Url and User are mandatory parameters."
+            }
+            
+            # Setup variable for non-interactive connection using API token
+            $Uri = ("{0}/api/v1/api-token/generate-token" -f $VaultConnection.Url)
+            $ContentType = "application/json"
+            $Headers = @{ "Authorization" = ("Bearer {0}" -f $AccessToken) }
 
-        if ($RefreshToken) {
+            # Initiate connection
+            Write-Verbose("Connecting to Secret Server URL: {0}" -f $VaultConnection.Url)
+            Write-Verbose("Content type: {0}" -f $ContentType)
+            Write-Verbose("Headers: {0}" -f ($Headers | Out-String))
+
+            # Get Response
+            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method GET -Uri $Uri -ContentType $ContentType -Headers $Headers
+            $WebResponseResult = $WebResponse.Content | ConvertFrom-Json
+            Write-Verbose("JSON Response:`n{0}" -f ($WebResponseResult | ConvertTo-Json -Depth 100))
+            if (-not [System.String]::IsNullOrEmpty($WebResponseResult.generatedToken)) {
+                # Get Session Token from successfull login
+                $Global:VaultConnection = @{}
+                $Global:VaultConnection.url   = $Url
+                $Global:VaultConnection.user  = $User
+                $Global:VaultConnection.access_token = $WebResponseResult.generatedToken.value
+                $Global:VaultConnection.token_type = "bearer"
+                $Global:VaultConnection.expires_in = 1200
+                $Global:VaultConnection.expires_at = [DateTime]::Now.AddSeconds(1200)
+                $Global:VaultConnection.refresh_token = ""
+            } else {
+                # Unsuccesful connection
+                Throw $WebResponseResult
+            }
+        } elseif ($RefreshToken) {
             # Test current connection to the Delinea Vault
             if ($Global:VaultConnection -eq [Void]$null) {
                 # Inform connection does not exists and suggest to initiate one
@@ -99,7 +136,6 @@ function Connect-DlnVault {
             $Auth = @{}
             $Auth.grant_type = "refresh_token"
             $Auth.refresh_token = $VaultConnection.refresh_token
-            #$Json = $Auth | ConvertTo-Json
 
             # Initiate connection
             Write-Verbose("Connecting to Secret Server URL: {0}" -f $VaultConnection.Url)
@@ -108,7 +144,7 @@ function Connect-DlnVault {
             Write-Verbose("Headers: {0}" -f ($Headers | Out-String))
 
             # Get Response
-            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $Uri -Body $Auth -ContentType $ContentType -Headers $Headers
+            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method POST -Uri $Uri -Body $Auth -ContentType $ContentType -Headers $Headers
             $WebResponseResult = $WebResponse.Content | ConvertFrom-Json
             Write-Verbose("JSON Response:`n{0}" -f ($WebResponseResult | ConvertTo-Json -Depth 100))
             if (-not [System.String]::IsNullOrEmpty($WebResponseResult.access_token)) {
@@ -158,7 +194,7 @@ function Connect-DlnVault {
             Write-Verbose("Headers: {0}" -f ($Header | Out-String))
 
             # Get Response
-            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $Uri -Body $Auth -ContentType $ContentType -Headers $Headers
+            $WebResponse = Invoke-WebRequest -UseBasicParsing -Method POST -Uri $Uri -Body $Auth -ContentType $ContentType -Headers $Headers
             $WebResponseResult = $WebResponse.Content | ConvertFrom-Json
             Write-Verbose("JSON Response:`n{0}" -f ($WebResponseResult | ConvertTo-Json -Depth 100))
             if (-not [System.String]::IsNullOrEmpty($WebResponseResult.access_token)) {
@@ -186,7 +222,7 @@ function Connect-DlnVault {
             Break
         }
         # WebException
-        Throw $_.ErrorDetails
+        Throw $_.ErrorDetails.Message
     } catch {
         # Unhandled exception
         Throw $_.Exception

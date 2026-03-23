@@ -39,6 +39,7 @@ $FunctionsList = @(
     # Secret Cmdlets
     'Get-DlnFolder',
     'Get-DlnSecret',
+    'Get-DlnSecretStub',
     'New-DlnFolder',
     'New-DlnSecret',
     'Remove-DlnFolder',

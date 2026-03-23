@@ -29,10 +29,10 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about User(s) on the system.
+Create a new secret.
 
 .DESCRIPTION
-This Cmdlet retrieves important information about User(s) on the system. Can return a single user by specifying the Username.
+This Cmdlet create a new secret.
 
 .PARAMETER Name
 Specify the User by its username.
@@ -41,49 +41,52 @@ Specify the User by its username.
 None
 
 .OUTPUTS
-[Object]XpmUser
+[Object]DlnSecret
 
 .EXAMPLE
-PS C:\> Get-XPMUser 
-Outputs all Users objects existing on the system
-
-.EXAMPLE
-PS C:\> Get-XPMUser -Name "john.doe@domain.name"
-Return user with username john.doe@domain.name if exists
-
-.EXAMPLE
-PS C:\> Get-XPMUser -Name "%test%"
-Return all users with Name containing "test" if exists
-
-.EXAMPLE
-PS C:\> Get-XPMUser -ID 12345678-ABCD-EFGH-IJKL-1234567890AB
-Return user with ID "12345678-ABCD-EFGH-IJKL-1234567890AB" if exists
+PS C:\> New-DlnSecret 
+Create a new secret
 #>
 function New-DlnSecret {
 	param (
-		[Parameter(Mandatory = $true, HelpMessage = "Specify the Template ID to use to create Secret.")]
-		[System.Int32]$TemplateId,
-		
-		[Parameter(Mandatory = $true, HelpMessage = "Specify the Folder ID where to create Secret.")]
-		[System.Int32]$FolderId,
+		[Parameter(Mandatory, HelpMessage = "The name to display for the secret.")]
+		[String]$Name,
 
-		[Parameter(Mandatory = $true, HelpMessage = "Specify the Secret name.")]
-		[System.String]$Name,
+   		[Parameter(Mandatory, HelpMessage = "The id of the secret template that defines the fields and properties of the secret.")]
+		[String]$SecretTemplateId,
 
-        [Parameter(Mandatory = $true, HelpMessage = "Specify the fields for this secret as an array of slug-value pairs (e.g. import from CSV file with headers as 'slug' and 'value').")]
-		[System.Object]$Fields,
+        [Parameter(Mandatory, HelpMessage = "An object listing the secret fields defined in the secret template representing slugnames and field values.")]
+		[Object]$Fields,
 
-        [Parameter(Mandatory = $false, HelpMessage = "Specify the Site to use when managing this Secret.")]
-		[System.String]$SiteId = "0",
+		[Parameter(HelpMessage = "If the secret is contained in a folder, the id of the containing folder. Set to null or -1 for secrets that are in the root folder.")]
+		[String]$FolderId,
 
-		[Parameter(Mandatory = $false, HelpMessage = "Specify if Inherit Secret Policy should be enabled (default is true).")]
-		[Switch]$InheritSecretPolicy,
+        [Parameter(HelpMessage = "The id of the secret policy that controls the security and other settings of the secret. Set to null to not assign a secret policy.")]
+		[String]$SecretPolicyId,
 
-		[Parameter(Mandatory = $false, HelpMessage = "Specify if SSH Keys should be generated (default is false).")]
+        [Parameter(HelpMessage = "The id of the distributed engine site that is used by this secret for operations such as password changing.")]
+		[String]$SiteId,
+
+        [Parameter(HelpMessage = "Secret used to change the current secret's password.")]
+		[String]$PrivilegedAccountSecretId,
+
+        [Parameter(HelpMessage = "Secrets used in password changers commands and scripts.")]
+		[String[]]$ResetSecretIds,
+
+        [Parameter(HelpMessage = "Whether the secret inherits permissions from the containing folder.")]
+		[Switch]$EnableInheritPermissions,
+
+        [Parameter(HelpMessage = "Whether the secret policy is inherited from the containing folder.")]
+		[Switch]$EnableInheritSecretPolicy,
+
+		[Parameter(HelpMessage = "Whether to generate an SSH private key passphrase. Only applicable when the Secret template has a password changer with the Private Key Passphrase field mapped. If it is not mapped, this setting is ignored.")]
+		[Switch]$GeneratePassphrase,
+
+        [Parameter(HelpMessage = "Whether to generate an SSH private key.")]
 		[Switch]$GenerateSshKeys,
         
-		[Parameter(Mandatory = $false, HelpMessage = "Specify if password should be changed automatically (default is false).")]
-		[Switch]$AutoChangePassword
+		[Parameter(HelpMessage = "Whether the secret's password is automatically rotated on a schedule.")]
+		[Switch]$AutoChangeEnabled
 	)
 
     try {
@@ -99,61 +102,87 @@ function New-DlnSecret {
             }
         }
 
+        # First step is to get a Stub Secret from Secret Template
+        if([String]::IsNullOrEmpty($FolderId)) {
+            # FolderId not present - Note that FolderId must be present if Global Settings that requires no Secrets to be created at root folder level is enabled
+            $StubSecret = Get-DlnSecretStub -SecretTemplateId $SecretTemplateId
+        } else {
+            # FolderId is present
+            $StubSecret = Get-DlnSecretStub -SecretTemplateId $SecretTemplateId -FolderId $FolderId
+        }
+        # Fail here if unable to generate Stub Secret
+        if($StubSecret -eq [Void]$null) {
+            Throw ("Unable to generate Stub Secret using SecretTemplateId '{0}'." -f $SecretTemplateId)
+        }
+
         # Setup values for API request
-        $Uri = ("{0}/internals/secret-detail" -f $VaultConnection.Url, $Id)
+        $Uri = ("{0}/api/v1/secrets" -f $VaultConnection.Url)
         $ContentType = "application/json"
         $Headers = @{ "Authorization" = ("Bearer {0}" -f $VaultConnection.access_token) }
 
-        # Set GET Parameters
-        $Data = @{}
-        # Add parameters
-        $Data.name = $Name
-        $Data.folderId = $FolderId
-        $Data.templateId = $TemplateId
-        $Data.site = $SiteId
-        # Parsing fields parameters
-        $ParsedFields = @()
-        foreach($Entry in $Fields) {
-            # Adding entry as hashtable
-            $ParsedFields += @{"slug"=$Entry.slug; "value"=$Entry.value}
+        # Set Parameters using stub secret
+        # Add mandatory parameters
+        $StubSecret.name = $Name
+        #$StubSecret.secretTemplateId = $SecretTemplateId
+        # Add Items itemValue based on slug from Fields
+        $StubSecret.items | ForEach-Object {
+            # Update itemVaule only if passed as a Field
+            if(-not [String]::IsNullOrEmpty($Fields.($_.slug))) {
+                $_.itemValue = $Fields.($_.slug)
+            }
         }
-        $Data.fields = $ParsedFields
+        # Add optional parameters
+        if(-not [String]::IsNullOrEmpty($FolderId)) {
+            $StubSecret.folderId = [Int32]$FolderId
+        }
+        if(-not [String]::IsNullOrEmpty($SecretPolicyId)) {
+            $StubSecret.secretPolicyId = [Int32]$SecretPolicyId
+        }
+        if(-not [String]::IsNullOrEmpty($SiteId)) {
+            $StubSecret.siteId = [Int32]$SiteId
+        }
+        if(-not [String]::IsNullOrEmpty($PrivilegedAccountSecretId)) {
+            $StubSecret.privilegedAccountSecretId = [Int32]$PrivilegedAccountSecretId
+        }
+        if(-not [String]::IsNullOrEmpty($ResetSecretIds)) {
+            $StubSecret.resetSecretIds = [Int32[]]$ResetSecretIds
+        }
         # Add boolean values
-        if($InheritSecretPolicy.IsPresent -and $InheritSecretPolicy) {
-            $Data.enableInheritSecretPolicy = $true
-        } elseif(-not $InheritSecretPolicy.IsPresent) {
-            # Default value
-            $Data.enableInheritSecretPolicy = "true"
-        } else {
-            $Data.enableInheritSecretPolicy = "false"
+        if($EnableInheritPermissions.IsPresent -and $EnableInheritPermissions) {
+            $StubSecret.enableInheritPermissions = $true
         }
-        if($GenerateSshKeys.IsPresent -and $GenerateSshKeys) {
-            $Data.generateSshKeys = "true"
-        } else {
-            # Default value
-            $Data.generateSshKeys = "false"
+        if($EnableInheritSecretPolicy.IsPresent -and $EnableInheritSecretPolicy) {
+            $StubSecret.enableInheritSecretPolicy = $true
         }
-        if($AutoChangePassword.IsPresent -and $AutoChangePassword) {
-            $Data.autoChangePassword = "true"
-        } else {
-            # Default value
-            $Data.autoChangePassword = ""
+        if($AutoChangeEnabled.IsPresent -and $AutoChangeEnabled) {
+            $StubSecret.autoChangeEnabled = $true
+        }
+        # Add constructed parameters
+        if(-not [String]::IsNullOrEmpty($StubSecret.sshKeyArgs)) {
+            if($GeneratePassphrase.IsPresent -and $GeneratePassphrase) {
+                $StubSecret.sshKeyArgs.generatePassphrase = $true
+            }
+            if($GenerateSshKeys.IsPresent -and $GenerateSshKeys) {
+                $StubSecret.sshKeyArgs.generateSshKeys = $true
+            }
         }
         # Create Json payload
-        $Payload = @{"data" = $Data} | ConvertTo-Json -Depth 3
+        $Payload = $StubSecret | ConvertTo-Json -Depth 3
         Write-Debug ("Payload for API call:`n {0}" -f ($Payload | Out-String))
 
         # Connect using RestAPI
         Write-Debug ("Calling API endpoint`n Uri: {0}`n ContentType: {1}`n Headers: {2}" -f $Uri, $ContentType, ($Headers | Out-String))
-        $WebResponse = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $Uri -ContentType $ContentType -Headers $Headers -Body $Payload
-        $WebResponseResult = $WebResponse.Content | ConvertFrom-Json
-        if ($WebResponseResult -match "[0-9]") {
-            # Return Secret Id
-            return $WebResponseResult
+        $WebResponse = Invoke-WebRequest -UseBasicParsing -Method POST -Uri $Uri -ContentType $ContentType -Headers $Headers -Body $Payload
+        if($WebResponse.StatusCode -eq 200) {
+            # Return content
+            return ($WebResponse.Content | ConvertFrom-Json)
         } else {
-            # Query error
-            Throw $WebResponseResult
+            # WebRequest error
+            Throw $WebResponse
         }
+    } catch [System.Net.WebException] {
+        # WebException
+        Throw $_.ErrorDetails.Message
     } catch {
         # Unhandled exception
         Throw $_.Exception

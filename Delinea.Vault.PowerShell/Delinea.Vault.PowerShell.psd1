@@ -46,6 +46,7 @@
         # Loading Secret Cmdlets
         '.\Lib\Get-DlnFolder.ps1',
         '.\Lib\Get-DlnSecret.ps1',
+        '.\Lib\Get-DlnSecretStub.ps1',
         '.\Lib\New-DlnFolder.ps1',
         '.\Lib\New-DlnSecret.ps1',
         '.\Lib\Remove-DlnFolder.ps1',
