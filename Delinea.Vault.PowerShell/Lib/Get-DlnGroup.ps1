@@ -29,16 +29,43 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about Group(s) on the system.
+Search, filter, sort, and page groups
 
 .DESCRIPTION
-This Cmdlet retrieves important information about Group(s) on the system. Can return a single group by specifying the Name.
+Search, filter, sort, and page groups
 
-.PARAMETER SearchText
-Specify the search text to use to filter results.
+.PARAMETER domainId
+Active Directory domain ID
 
-.PARAMETER IncludeInactive
-Specify if results should include inactive groups.
+.PARAMETER excludeInboxRuleIdSubscribers
+Do not include any groups already subscribed this inbox notification rule
+
+.PARAMETER includeInactive
+Whether to include inactive groups in the results
+
+.PARAMETER limitToViewableGroups
+Limit groups to groups that current user can view details of
+
+.PARAMETER platformOnly
+Limit groups to only Platform groups
+
+.PARAMETER searchText
+Search text
+
+.PARAMETER skip
+Number of records to skip before taking results
+
+.PARAMETER sortBy[0].direction
+Sort direction
+
+.PARAMETER sortBy[0].name
+Sort field name
+
+.PARAMETER sortBy[0].priority
+Priority index. Sorts with lower values are executed earlier
+
+.PARAMETER take
+Maximum number of records to include in results
 
 .INPUTS
 None
