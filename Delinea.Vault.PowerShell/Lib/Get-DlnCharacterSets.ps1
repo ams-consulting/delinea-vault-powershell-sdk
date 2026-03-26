@@ -29,13 +29,31 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves important information about User(s) on the system.
+Search, filter, sort, and page character sets
 
 .DESCRIPTION
-This Cmdlet retrieves important information about User(s) on the system. Can return a single user by specifying the Username.
+Search, filter, sort, and page character sets
 
-.PARAMETER Name
-Specify the User by its username.
+.PARAMETER status
+Status
+
+.PARAMETER skip
+Number of records to skip before taking results
+
+.PARAMETER sortBy[0].direction
+Sort direction
+
+.PARAMETER sortBy[0].name
+Sort field name
+
+.PARAMETER sortBy[0].priority
+Priority index. Sorts with lower values are executed earlier
+
+.PARAMETER take
+Maximum number of records to include in results
+
+.PARAMETER id
+id 
 
 .INPUTS
 None
