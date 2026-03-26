@@ -29,28 +29,43 @@
 
 <#
 .SYNOPSIS
-This Cmdlet retrieves information about Folder(s) on the system.
+Search, filter, sort, and page secret folders
 
 .DESCRIPTION
-This Cmdlet retrieves information about Folder(s) on the system. Can filter results using SearchText.
+Search, filter, sort, and page secret folders
 
-.PARAMETER SearchText
-Specify the search text to use to filter results.
+.PARAMETER folderTypeId
+The icon to display for the folder. Depricated in latest UI. Use 1 when setting this value.
 
-.PARAMETER PageSize
-Specify the number of objects by pages when using pagination (default is 100).
+.PARAMETER limitToDirectDescendents
+When true and ParentFolderId is not null only return immediate child folders
 
-.PARAMETER SortDirection
-Specify the sorting direction between 'Asc' and 'Desc' (default is 'Asc').
-
-.PARAMETER SortBy
-Specify the field to sort by (default is 'name').
+.PARAMETER onlyIncludeRootFolders
+When true only root folders will be returned and ParentFolderId will be ignored
 
 .PARAMETER ParentFolderId
-Specify parent folder ID from which to search folders.
+Return folders that are descendants of this folder.
 
-.PARAMETER OnlyIncludeRootFolders
-Specify if results should include all folders or only root folders.
+.PARAMETER permissionRequired
+Specify whether to filter by Owner, Edit, AddSecret, View folder permission. Default is View.
+
+.PARAMETER searchText
+Search term to match against folder names. Search returns any folder where the search term is contained in the folder name.
+
+.PARAMETER skip
+Number of records to skip before taking results
+
+.PARAMETER sortBy[0].direction
+Sort direction
+
+.PARAMETER sortBy[0].name
+Sort field name
+
+.PARAMETER sortBy[0].priority
+Priority index. Sorts with lower values are executed earlier
+
+.PARAMETER take
+Maximum number of records to include in results
 
 .INPUTS
 None
@@ -58,21 +73,6 @@ None
 .OUTPUTS
 [Object]DlnFolder
 
-.EXAMPLE
-PS C:\> Get-DlnFolder 
-Outputs all Users objects existing on the system
-
-.EXAMPLE
-PS C:\> Get-DlnFolder -SearchText "Delinea Vault Accounts"
-Return folders with name exactly or containing "Delinea Vault Accounts" if exists
-
-.EXAMPLE
-PS C:\> Get-DlnFolder -ParentFolderId (Get-DlnFolder -SearchText "Delinea Vault Accounts").Id
-Return all folders existing as a child folder of folder with Name containing "Delinea Vault Accounts" if exists
-
-.EXAMPLE
-PS C:\> Get-DlnFolder -OnlyIncludeRootFolders
-Return only folders that are root folders if exists
 #>
 function Get-DlnFolder {
 	param (
